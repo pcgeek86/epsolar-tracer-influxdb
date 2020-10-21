@@ -26,21 +26,30 @@ ins.clear_buffers_before_each_transaction = True
 PV_VOLTAGE = 0x3100
 PV_CURRENT = 0x3101
 
+
 while True:
-    pv_voltage = ins.read_register(PV_VOLTAGE, 2, 4, False)
+    pv_voltage = ins.read_register(PV_VOLTAGE, 2, 4, False) 
     data = 'array1 pv_voltage={0}'.format(pv_voltage)
     writer.write(bucket, org, data)
     print(pv_voltage)
-
-    pv_current = ins.read_register(PV_CURRENT, 2, 4, False)
+    
+    pv_current = ins.read_register(PV_CURRENT, 2, 4, False) 
     data = 'array1 pv_current={0}'.format(pv_current)
     writer.write(bucket, org, data)
     print(pv_current)
+    
+    # Calculate total PV power from high and low bits
 
     pv_power_low = ins.read_register(0x3102, 0, 4, False);
-    data = 'array1 pv_power={0}'.format(pv_power_low/100)
+    print('PV Power Low: {0}'.format(pv_power_low))
+
+    pv_power_high = ins.read_register(0x3103, 0, 4, False);
+    print('PV Power High: {0}'.format(pv_power_high))
+
+    pv_power = int('0b' + '{0:016b}'.format(pv_power_high) + '{0:016b}'.format(pv_power_low), 2) / 100
+    print('PV Power: {0}'.format(pv_power))
+    data = 'array1 pv_power={0}'.format(pv_power)
     writer.write(bucket, org, data)
-    print(pv_power_low/100)
 
     # Battery bank voltage
     battery_voltage = ins.read_register(0x3104, 2, 4, False);
@@ -55,7 +64,9 @@ while True:
     print('Battery current: {0}'.format(battery_current))
 
     # Battery power (watts)
-    battery_power = ins.read_register(0x3106, 0, 4, False) / 100;
+    battery_power_low = ins.read_register(0x3106, 0, 4, False)
+    battery_power_high = ins.read_register(0x3107, 0, 4, False)
+    battery_power = int('0b' + '{0:016b}{1:016b}'.format(battery_power_high, battery_power_low), 2) / 100
     data = 'array1 battery_power={0}'.format(battery_power)
     writer.write(bucket, org, data)
     print('Battery power: {0}'.format(battery_power))
